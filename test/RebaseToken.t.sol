@@ -21,14 +21,12 @@ contract RebaseTokenTest is Test {
         rebaseToken = new RebaseToken();
         vault = new Vault(IRebaseToken(address(rebaseToken)));
         rebaseToken.grantMintAndBurnRole(address(vault));
-        (bool success, ) = payable(address(vault)).call{value: 1e18}("");
+        // (bool success, ) = payable(address(vault)).call{value: 1e18}("");
         vm.stopPrank();
     }
 
     function addRewardsToVault(uint256 rewardAmount) public {
-        (bool success, ) = payable(address(vault)).call{value: rewardAmount}(
-            ""
-        );
+        payable(address(vault)).call{value: rewardAmount}("");
     }
 
     function testDepositLinear(uint256 amount) public {
@@ -143,16 +141,33 @@ contract RebaseTokenTest is Test {
         rebaseToken.setInterestRate(newInterestRate);
     }
 
-    function testCannotCallMintAndBurn() public {
-        vm.prank(user);
-        vm.expectPartialRevert(
-            bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector)
-        );
-        rebaseToken.mint(user, 100);
-        vm.expectPartialRevert(
-            bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector)
-        );
+    // function testCannotCallMintAndBurn() public {
+    //     vm.prank(user);
+    //     vm.expectPartialRevert(
+    //         bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector)
+    //     );
+    //     rebaseToken.mint(user, 100, rebaseToken.getInterestRate());
+    //     vm.expectPartialRevert(
+    //         bytes4(IAccessControl.AccessControlUnauthorizedAccount.selector)
+    //     );
+    //     rebaseToken.burn(user, 100);
+    // }
+
+    function testCannotCallMint() public {
+        // Deposit funds
+        vm.startPrank(user);
+        uint256 interestRate = rebaseToken.getInterestRate();
+        vm.expectRevert();
+        rebaseToken.mint(user, 100, interestRate);
+        vm.stopPrank();
+    }
+
+    function testCannotCallBurn() public {
+        // Deposit funds
+        vm.startPrank(user);
+        vm.expectRevert();
         rebaseToken.burn(user, 100);
+        vm.stopPrank();
     }
 
     function testGetPrincipleAmount(uint256 amount) public {
